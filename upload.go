@@ -62,7 +62,7 @@ func upload(args []string) int {
 			var err error
 			maxSymlinkDepth, err = strconv.Atoi(args[i+1])
 			if err != nil {
-				printErrorAndExit(err)
+				PrintErrorAndExit(err)
 			}
 			i++
 		default:
@@ -77,7 +77,7 @@ func upload(args []string) int {
 
 	// Make sure localPath exists.
 	if _, err := os.Stat(localPath); err != nil {
-		printErrorAndExit(err)
+		PrintErrorAndExit(err)
 	}
 
 	f := gd.GetFiles(drivePath)
@@ -88,16 +88,16 @@ func upload(args []string) int {
 		p := filepath.Dir(drivePath)
 		switch len(gd.GetFiles(p)) {
 		case 0:
-			printErrorAndExit(fmt.Errorf("%s: not found", p))
+			PrintErrorAndExit(fmt.Errorf("%s: not found", p))
 		case 1:
 			// LGTM.
 		default:
-			printErrorAndExit(fmt.Errorf("%s: multiple files exist", p))
+			PrintErrorAndExit(fmt.Errorf("%s: multiple files exist", p))
 		}
 	case 1:
 		// LGTM.
 	default:
-		printErrorAndExit(fmt.Errorf("%s: multiple files exist", drivePath))
+		PrintErrorAndExit(fmt.Errorf("%s: multiple files exist", drivePath))
 	}
 
 	syncStartTime = time.Now()
@@ -333,7 +333,7 @@ func syncHierarchyUp(localPath string, driveRoot string, encrypt bool, trustTime
 				// Errors creating directories are basically unrecoverable,
 				// as they'll prevent us from later uploading any files in
 				// them.
-				printErrorAndExit(err)
+				PrintErrorAndExit(err)
 			}
 		}
 		if dirProgressBar != nil {

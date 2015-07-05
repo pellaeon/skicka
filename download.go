@@ -69,9 +69,9 @@ func download(args []string) int {
 	// it's not a single file or folder, then error out.
 	files := gd.GetFiles(drivePath)
 	if len(files) == 0 {
-		printErrorAndExit(fmt.Errorf("%s: not found on Drive", drivePath))
+		PrintErrorAndExit(fmt.Errorf("%s: not found on Drive", drivePath))
 	} else if len(files) > 1 {
-		printErrorAndExit(fmt.Errorf("%s: %d files found on Drive with this name",
+		PrintErrorAndExit(fmt.Errorf("%s: %d files found on Drive with this name",
 			drivePath, len(files)))
 	}
 
@@ -137,7 +137,7 @@ func syncHierarchyDown(driveBasePath string, localBasePath string, trustTimes bo
 	// First, make sure the user isn't asking us to download a directory on
 	// top of a file.
 	if stat, err := os.Stat(localBasePath); err == nil && !stat.IsDir() {
-		printErrorAndExit(fmt.Errorf("%s: unable to download folder %s "+
+		PrintErrorAndExit(fmt.Errorf("%s: unable to download folder %s "+
 			"on top of file", localBasePath, driveBasePath))
 	}
 

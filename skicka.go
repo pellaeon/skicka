@@ -21,8 +21,6 @@ package main
 
 import (
 	"bytes"
-	"code.google.com/p/gcfg"
-	"code.google.com/p/go.crypto/pbkdf2"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/md5"
@@ -32,9 +30,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/google/skicka/gdrive"
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 	"io"
 	"io/ioutil"
 	"log"
@@ -50,6 +45,12 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"code.google.com/p/gcfg"
+	"code.google.com/p/go.crypto/pbkdf2"
+	"github.com/google/skicka/gdrive"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 )
 
 const timeFormat = "2006-01-02T15:04:05.000000000Z07:00"
@@ -138,10 +139,10 @@ func sanitize(s string) string {
 	return s
 }
 
-func debugNoPrint(s string, args ...interface{}) {
+func DebugNoPrint(s string, args ...interface{}) {
 }
 
-func debugPrint(s string, args ...interface{}) {
+func DebugPrint(s string, args ...interface{}) {
 	debug.Printf(s, args...)
 }
 
@@ -360,13 +361,13 @@ func encryptBytes(key []byte, iv []byte, plaintext []byte) []byte {
 // using the given key and initialization vector.
 func makeEncrypterReader(key []byte, iv []byte, reader io.Reader) io.Reader {
 	if key == nil {
-		printErrorAndExit(fmt.Errorf("uninitialized key in makeEncrypterReader()"))
+		PrintErrorAndExit(fmt.Errorf("uninitialized key in makeEncrypterReader()"))
 	}
 	block, err := aes.NewCipher(key)
 	checkFatalError(err, "unable to create AES cypher")
 
 	if len(iv) != aes.BlockSize {
-		printErrorAndExit(fmt.Errorf("IV length %d != aes.BlockSize %d", len(iv),
+		PrintErrorAndExit(fmt.Errorf("IV length %d != aes.BlockSize %d", len(iv),
 			aes.BlockSize))
 	}
 
@@ -383,13 +384,13 @@ func decryptBytes(key []byte, iv []byte, ciphertext []byte) []byte {
 
 func makeDecryptionReader(key []byte, iv []byte, reader io.Reader) io.Reader {
 	if key == nil {
-		printErrorAndExit(fmt.Errorf("uninitialized key in makeDecryptionReader()"))
+		PrintErrorAndExit(fmt.Errorf("uninitialized key in makeDecryptionReader()"))
 	}
 	block, err := aes.NewCipher(key)
 	checkFatalError(err, "unable to create AES cypher")
 
 	if len(iv) != aes.BlockSize {
-		printErrorAndExit(fmt.Errorf("IV length %d != aes.BlockSize %d", len(iv),
+		PrintErrorAndExit(fmt.Errorf("IV length %d != aes.BlockSize %d", len(iv),
 			aes.BlockSize))
 	}
 
@@ -412,7 +413,7 @@ func getRandomBytes(n int) []byte {
 func generateKey() {
 	passphrase := os.Getenv(passphraseEnvironmentVariable)
 	if passphrase == "" {
-		printErrorAndExit(fmt.Errorf(passphraseEnvironmentVariable +
+		PrintErrorAndExit(fmt.Errorf(passphraseEnvironmentVariable +
 			" environment variable not set."))
 	}
 
@@ -421,7 +422,7 @@ func generateKey() {
 	salt := getRandomBytes(32)
 	hash := pbkdf2.Key([]byte(passphrase), salt, 65536, 64, sha256.New)
 	if len(hash) != 64 {
-		printErrorAndExit(fmt.Errorf("incorrect key size returned by pbkdf2 %d", len(hash)))
+		PrintErrorAndExit(fmt.Errorf("incorrect key size returned by pbkdf2 %d", len(hash)))
 	}
 
 	// We'll store the first 32 bytes of the hash to use to confirm the
@@ -516,9 +517,9 @@ func getPermissions(driveFile *gdrive.File) (os.FileMode, error) {
 func checkFatalError(err error, message string) {
 	if err != nil {
 		if message != "" {
-			printErrorAndExit(fmt.Errorf("%s: %v", message, err))
+			PrintErrorAndExit(fmt.Errorf("%s: %v", message, err))
 		} else {
-			printErrorAndExit(err)
+			PrintErrorAndExit(err)
 		}
 	}
 }
@@ -528,7 +529,7 @@ func addErrorAndPrintMessage(totalErrors *int32, message string, err error) {
 	atomic.AddInt32(totalErrors, 1)
 }
 
-func printErrorAndExit(err error) {
+func PrintErrorAndExit(err error) {
 	fmt.Fprintf(os.Stderr, "\rskicka: %s\n", err)
 	os.Exit(1)
 }
@@ -543,7 +544,7 @@ func printUsageAndExit() {
 
 const clientId = "952282617835-siotrfjbktpinek08hrnspl33d9gho1e.apps.googleusercontent.com"
 
-func getOAuthClient(tokenCacheFilename string, tryBrowserAuth bool,
+func GetOAuthClient(tokenCacheFilename string, tryBrowserAuth bool,
 	transport http.RoundTripper) (*http.Client, error) {
 	if config.Google.ApiKey != "" {
 		transport = addKeyTransport{transport: transport, key: config.Google.ApiKey}
@@ -739,11 +740,11 @@ func createConfigFile(filename string) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		err := ioutil.WriteFile(filename, []byte(contents), 0600)
 		if err != nil {
-			printErrorAndExit(fmt.Errorf("%s: %v", filename, err))
+			PrintErrorAndExit(fmt.Errorf("%s: %v", filename, err))
 		}
 		message("created configuration file %s.\n", filename)
 	} else {
-		printErrorAndExit(fmt.Errorf("%s: file already exists; "+
+		PrintErrorAndExit(fmt.Errorf("%s: file already exists; "+
 			"leaving it alone.", filename))
 	}
 }
@@ -788,12 +789,12 @@ func checkConfigValidity() {
 	}
 }
 
-func readConfigFile(filename string) {
+func ReadConfigFile(filename string) {
 	if runtime.GOOS != "windows" {
 		if info, err := os.Stat(filename); err != nil {
-			printErrorAndExit(fmt.Errorf("%s: %v", filename, err))
+			PrintErrorAndExit(fmt.Errorf("%s: %v", filename, err))
 		} else if goperms := info.Mode() & ((1 << 6) - 1); goperms != 0 {
-			printErrorAndExit(fmt.Errorf("%s: permissions of configuration file "+
+			PrintErrorAndExit(fmt.Errorf("%s: permissions of configuration file "+
 				"allow group/other access. Your secrets are at risk.",
 				filename))
 		}
@@ -801,7 +802,7 @@ func readConfigFile(filename string) {
 
 	err := gcfg.ReadFileInto(&config, filename)
 	if err != nil {
-		printErrorAndExit(fmt.Errorf("%s: %v. (You may want to run \"skicka "+
+		PrintErrorAndExit(fmt.Errorf("%s: %v. (You may want to run \"skicka "+
 			"init\" to create an initial configuration file.)", filename, err))
 	}
 	checkConfigValidity()
@@ -973,15 +974,15 @@ func main() {
 		return
 	}
 
-	readConfigFile(*configFilename)
+	ReadConfigFile(*configFilename)
 
 	// Choose the appropriate callback function for the GDrive object to
 	// use for debugging output.
 	var dpf func(s string, args ...interface{})
 	if debug {
-		dpf = debugPrint
+		dpf = DebugPrint
 	} else {
-		dpf = debugNoPrint
+		dpf = DebugNoPrint
 	}
 
 	// Check this before creating the GDrive object so that we don't spend
@@ -1003,20 +1004,20 @@ func main() {
 		// small files.
 		tr.MaxIdleConnsPerHost = 4
 	} else {
-		printErrorAndExit(fmt.Errorf("DefaultTransport not an *http.Transport?"))
+		PrintErrorAndExit(fmt.Errorf("DefaultTransport not an *http.Transport?"))
 	}
 	if *flakyHTTP {
-		transport = newFlakyTransport(transport)
+		transport = NewFlakyTransport(transport)
 	}
 	if *dumpHTTP {
-		transport = loggingTransport{transport: transport}
+		transport = LoggingTransport{transport: transport}
 	}
 
 	// And now upgrade to the OAuth Transport *http.Client.
-	client, err := getOAuthClient(*tokenCacheFilename, !*noBrowserAuth,
+	client, err := GetOAuthClient(*tokenCacheFilename, !*noBrowserAuth,
 		transport)
 	if err != nil {
-		printErrorAndExit(fmt.Errorf("error with OAuth2 Authorization: %v ", err))
+		PrintErrorAndExit(fmt.Errorf("error with OAuth2 Authorization: %v ", err))
 	}
 
 	// Update the current active memory statistics every half second.
@@ -1032,7 +1033,7 @@ func main() {
 		config.Download.Bytes_per_second_limit, dpf, client,
 		*metadataCacheFilename, quiet)
 	if err != nil {
-		printErrorAndExit(fmt.Errorf("error creating Google Drive "+
+		PrintErrorAndExit(fmt.Errorf("error creating Google Drive "+
 			"client: %v", err))
 	}
 

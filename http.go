@@ -41,11 +41,11 @@ func (akt addKeyTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	return akt.transport.RoundTrip(req)
 }
 
-type loggingTransport struct {
+type LoggingTransport struct {
 	transport http.RoundTripper
 }
 
-func (lt loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (lt LoggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	dumpBody := false
 	if ct, ok := req.Header["Content-Type"]; ok && len(ct) == 1 && ct[0] != "application/octet-stream" {
 		dumpBody = true
@@ -80,7 +80,7 @@ type flakyTransport struct {
 	endTime   time.Time
 }
 
-func newFlakyTransport(transport http.RoundTripper) http.RoundTripper {
+func NewFlakyTransport(transport http.RoundTripper) http.RoundTripper {
 	seed := time.Now().UTC().UnixNano()
 	log.Printf("Flaky rand seed %d", seed)
 	return flakyTransport{transport: transport, rng: rand.New(rand.NewSource(seed))}
