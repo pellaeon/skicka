@@ -946,7 +946,7 @@ func (gd *GDrive) GetFileContents(f *File) (io.ReadCloser, error) {
 		switch gd.handleHTTPResponse(resp, err, try) {
 		case Success:
 			// Rate-limit the download, if required.
-			return makeLimitedDownloadReader(resp.Body), nil
+			return MakeLimitedDownloadReader(resp.Body), nil
 		case Fail:
 			return nil, err
 		case Retry:

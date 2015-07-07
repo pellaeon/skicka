@@ -105,7 +105,7 @@ func makeLimitedUploadReader(r io.ReadCloser) io.ReadCloser {
 	return r
 }
 
-func makeLimitedDownloadReader(r io.ReadCloser) io.ReadCloser {
+func MakeLimitedDownloadReader(r io.ReadCloser) io.ReadCloser {
 	if downloadBandwidthLimited {
 		return rateLimitedReader{R: r, availableBytes: &availableDownloadBytes}
 	}
