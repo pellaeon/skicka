@@ -30,9 +30,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/cheggaaa/pb"
-	"google.golang.org/api/drive/v2"
-	"google.golang.org/api/googleapi"
 	"io"
 	"io/ioutil"
 	"log"
@@ -44,6 +41,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/cheggaaa/pb"
+	"google.golang.org/api/drive/v2"
+	"google.golang.org/api/googleapi"
 )
 
 const timeFormat = "2006-01-02T15:04:05.000000000Z07:00"
@@ -222,11 +223,11 @@ func (gd *GDrive) tryToHandleDriveAPIError(err error, try int) error {
 	return nil
 }
 
-// getFileById returns the *drive.File corresponding to the string Id
+// GetFileById returns the *drive.File corresponding to the string Id
 // Google Drive uses to uniquely identify the file. It deals with timeouts
 // and transient errors.
-func (gd *GDrive) getFileById(id string) (*drive.File, error) {
-	gd.debug("getFileById: %s", id)
+func (gd *GDrive) GetFileById(id string) (*drive.File, error) {
+	gd.debug("GetFileById: %s", id)
 	for try := 0; ; try++ {
 		file, err := gd.svc.Files.Get(id).Do()
 		if err == nil {
@@ -516,7 +517,7 @@ func (gd *GDrive) UpdateMetadataCache(filename string) error {
 
 	// TODO: store the root file metadata in the cache as well to avoid
 	// doing this each time.
-	rootDriveFile, err := gd.getFileById("root")
+	rootDriveFile, err := gd.GetFileById("root")
 	if err != nil {
 		return err
 	}
@@ -903,7 +904,7 @@ func (gd *GDrive) GetFileContents(f *File) (io.ReadCloser, error) {
 	// The file download URL expires some hours after it's retrieved, so we
 	// can't really cache it.  Re-grab the full *drive.File right before
 	// downloading it so that we have a fresh URL.
-	driveFile, err := gd.getFileById(f.Id)
+	driveFile, err := gd.GetFileById(f.Id)
 	if err != nil {
 		return nil, err
 	}
